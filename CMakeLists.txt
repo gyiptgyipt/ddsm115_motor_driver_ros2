@@ -28,6 +28,10 @@ install(TARGETS dsm115_motor_driver_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS scripts/ddsm115_set_id.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}
 )

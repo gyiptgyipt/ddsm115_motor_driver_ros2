@@ -1,5 +1,79 @@
 # dsm115_motor_driver_ros2
 
+## Assign Motor IDs First
+
+Before running the ROS 2 driver, assign a unique ID to each DDSM115 motor.
+
+Important: connect only one motor to the RS485 adapter while assigning an ID. If multiple unconfigured motors are connected, they can all receive the same ID.
+
+### Option 1: Use The Included Script
+
+Build and source the workspace:
+
+```bash
+cd ~/ros2_ws
+colcon build --packages-select dsm115_motor_driver_ros2
+source install/setup.bash
+```
+
+Then connect one motor and run:
+
+```bash
+ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 1
+```
+
+That assigns ID `1`. Power-cycle the motor after the command finishes.
+
+Repeat for each motor:
+
+```bash
+ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 2
+ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 3
+ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 4
+```
+
+The script sends the Waveshare ID command 5 times, which is what the motor expects after power-on.
+
+If the serial port needs permission:
+
+```bash
+sudo usermod -a -G dialout $USER
+```
+
+Log out and log back in after running that command.
+
+### Option 2: Send Raw Hex Manually
+
+You can also use any serial terminal that supports hex send mode. Use `115200`, `8N1`, and send the command 5 times.
+
+```text
+ID 1:
+AA 55 53 01 00 00 00 00 00 CB
+
+ID 2:
+AA 55 53 02 00 00 00 00 00 92
+
+ID 3:
+AA 55 53 03 00 00 00 00 00 A5
+
+ID 4:
+AA 55 53 04 00 00 00 00 00 20
+```
+
+After assigning IDs, put the same IDs in `config/dsm115_motor_driver.yaml`:
+
+```yaml
+wheel_ids: [1, 2, 3, 4]
+```
+
+Wire the RS485 adapter as:
+
+```text
+RS485 A+  -> DDSM115 DATA+
+RS485 B-  -> DDSM115 DATA-
+GND       -> DDSM115 signal GND, if available
+```
+
 Simple ROS 2 driver for Waveshare DDSM115 motor wheels connected on an RS485 bus.
 
 This is a ROS 2 port of the ROS 1 `ros_ddsm115_driver` package. It keeps the same basic interface: each wheel has one target velocity topic and three feedback topics.
@@ -117,3 +191,5 @@ ros2 topic pub /front_left_wheel/target_velocity std_msgs/msg/Float64 "{data: 0.
 - This driver only implements velocity control mode.
 - DDSM115 wheels keep the last command if control messages stop. The node sends `0 RPM` to all configured wheels during normal shutdown, but it cannot protect against hardware, bus, or power failures.
 - Occasional RS485 timeouts can happen. The node ignores a bad feedback packet and waits for the next command.
+
+# Safety Needed
