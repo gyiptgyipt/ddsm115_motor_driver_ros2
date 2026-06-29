@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<robot name="ddsm115_base">
+  <link name="base_link"/>
+
+  <link name="front_left_wheel_link"/>
+  <joint name="front_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="front_left_wheel_link"/>
+    <origin xyz="0.15 0.18 0.0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <link name="front_right_wheel_link"/>
+  <joint name="front_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="front_right_wheel_link"/>
+    <origin xyz="0.15 -0.18 0.0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <link name="rear_left_wheel_link"/>
+  <joint name="rear_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_left_wheel_link"/>
+    <origin xyz="-0.15 0.18 0.0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <link name="rear_right_wheel_link"/>
+  <joint name="rear_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_right_wheel_link"/>
+    <origin xyz="-0.15 -0.18 0.0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <ros2_control name="Ddsm115System" type="system">
+    <hardware>
+      <plugin>ddsm115_motor_driver_ros2/Ddsm115HardwareInterface</plugin>
+      <param name="port_name">/dev/ttyUSB0</param>
+      <param name="command_deadband">0.001</param>
+      <param name="command_change_epsilon">0.001</param>
+    </hardware>
+
+    <joint name="front_left_wheel_joint">
+      <param name="id">1</param>
+      <param name="direction">forward</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="front_right_wheel_joint">
+      <param name="id">2</param>
+      <param name="direction">backward</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="rear_left_wheel_joint">
+      <param name="id">3</param>
+      <param name="direction">forward</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="rear_right_wheel_joint">
+      <param name="id">4</param>
+      <param name="direction">backward</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+</robot>

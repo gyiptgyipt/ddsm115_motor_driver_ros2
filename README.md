@@ -1,38 +1,66 @@
-# dsm115_motor_driver_ros2
+# ddsm115_motor_driver_ros2
 
-## Assign Motor IDs First
+ROS 2 `ros2_control` hardware interface for Waveshare DDSM115 motor wheels on an RS485 bus.
 
-Before running the ROS 2 driver, assign a unique ID to each DDSM115 motor.
+The normal drive stack is:
 
-Important: connect only one motor to the RS485 adapter while assigning an ID. If multiple unconfigured motors are connected, they can all receive the same ID.
+```text
+Nav2 /cmd_vel_nav
+Teleop /cmd_vel_teleop
+        |
+        v
+twist_mux
+        |
+        v
+diff_drive_controller
+        |
+        v
+ros2_control hardware interface
+        |
+        v
+DDSM115 motors
+```
 
-### Option 1: Use The Included Script
+## Motor ID Setup
+
+Assign a unique ID to each motor before running the driver. Connect only one motor to the RS485 adapter while assigning an ID. If multiple unconfigured motors are connected, they can all receive the same ID.
 
 Build and source the workspace:
 
 ```bash
 cd ~/ros2_ws
-colcon build --packages-select dsm115_motor_driver_ros2
+colcon build --packages-select ddsm115_motor_driver_ros2
 source install/setup.bash
 ```
 
-Then connect one motor and run:
+Assign ID `1`:
 
 ```bash
-ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 1
+ros2 run ddsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 1
 ```
 
-That assigns ID `1`. Power-cycle the motor after the command finishes.
-
-Repeat for each motor:
+Power-cycle the motor after the command finishes, then repeat for the other motors:
 
 ```bash
-ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 2
-ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 3
-ros2 run dsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 4
+ros2 run ddsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 2
+ros2 run ddsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 3
+ros2 run ddsm115_motor_driver_ros2 ddsm115_set_id.py /dev/ttyUSB0 4
 ```
 
-The script sends the Waveshare ID command 5 times, which is what the motor expects after power-on.
+## Dependencies
+
+Install the standard ROS 2 control packages:
+
+```bash
+sudo apt install \
+  ros-humble-ros2-control \
+  ros-humble-ros2-controllers \
+  ros-humble-controller-manager \
+  ros-humble-diff-drive-controller \
+  ros-humble-joint-state-broadcaster \
+  ros-humble-robot-state-publisher \
+  ros-humble-twist-mux
+```
 
 If the serial port needs permission:
 
@@ -40,156 +68,185 @@ If the serial port needs permission:
 sudo usermod -a -G dialout $USER
 ```
 
-Log out and log back in after running that command.
-
-### Option 2: Send Raw Hex Manually
-
-You can also use any serial terminal that supports hex send mode. Use `115200`, `8N1`, and send the command 5 times.
-
-```text
-ID 1:
-AA 55 53 01 00 00 00 00 00 CB
-
-ID 2:
-AA 55 53 02 00 00 00 00 00 92
-
-ID 3:
-AA 55 53 03 00 00 00 00 00 A5
-
-ID 4:
-AA 55 53 04 00 00 00 00 00 20
-```
-
-After assigning IDs, put the same IDs in `config/dsm115_motor_driver.yaml`:
-
-```yaml
-wheel_ids: [1, 2, 3, 4]
-```
-
-Wire the RS485 adapter as:
-
-```text
-RS485 A+  -> DDSM115 DATA+
-RS485 B-  -> DDSM115 DATA-
-GND       -> DDSM115 signal GND, if available
-```
-
-Simple ROS 2 driver for Waveshare DDSM115 motor wheels connected on an RS485 bus.
-
-This is a ROS 2 port of the ROS 1 `ros_ddsm115_driver` package. It keeps the same basic interface: each wheel has one target velocity topic and three feedback topics.
-
-## Features
-
-- ROS 2 `rclcpp` C++ node
-- RS485 serial communication at 115200 baud
-- DDSM115 velocity loop mode
-- Per-wheel target velocity in `rad/s`
-- Per-wheel feedback for velocity, angle, and current
-- Safe shutdown command that sends `0 RPM` to every configured wheel
+Log out and log back in after changing group membership.
 
 ## Build
 
-Clone or place this package inside the `src` folder of a ROS 2 workspace:
-
 ```bash
 cd ~/ros2_ws
-colcon build --packages-select dsm115_motor_driver_ros2
+colcon build --packages-select ddsm115_motor_driver_ros2
 source install/setup.bash
 ```
 
-If the serial port needs permission, add your user to the `dialout` group and log in again:
+## Configure Hardware
 
-```bash
-sudo usermod -a -G dialout $USER
+Edit the ros2_control block in:
+
+```text
+description/urdf/ddsm115_base.urdf
 ```
 
-## Configure
+The important hardware settings are:
+
+```xml
+<hardware>
+  <plugin>ddsm115_motor_driver_ros2/Ddsm115HardwareInterface</plugin>
+  <param name="port_name">/dev/ttyUSB0</param>
+</hardware>
+```
+
+Set each motor ID and direction on its joint:
+
+```xml
+<joint name="front_left_wheel_joint">
+  <param name="id">1</param>
+  <param name="direction">forward</param>
+  <command_interface name="velocity"/>
+  <state_interface name="position"/>
+  <state_interface name="velocity"/>
+</joint>
+```
+
+Use `direction="backward"` if that motor spins opposite to the expected robot direction.
+
+Default joint mapping:
+
+| Joint | Motor ID | Direction |
+| --- | --- | --- |
+| `front_left_wheel_joint` | `1` | `forward` |
+| `front_right_wheel_joint` | `2` | `backward` |
+| `rear_left_wheel_joint` | `3` | `forward` |
+| `rear_right_wheel_joint` | `4` | `backward` |
+
+If you already have a robot URDF, copy the `<ros2_control>` block into your real URDF and launch with:
+
+```bash
+ros2 launch ddsm115_motor_driver_ros2 ddsm115_motor_driver.launch.py \
+  robot_description_file:=/path/to/your_robot.urdf
+```
+
+## Configure diff_drive_controller
 
 Edit:
 
 ```text
-config/dsm115_motor_driver.yaml
+config/ros2_control.yaml
 ```
 
-Example:
+Important values:
 
-```yaml
-dsm115_motor_driver:
-  ros__parameters:
-    port_name: "/dev/ttyUSB0"
-    wheel_names:
-      - "front_left_wheel"
-      - "front_right_wheel"
-      - "rear_left_wheel"
-      - "rear_right_wheel"
-    wheel_ids: [1, 2, 3, 4]
-    wheel_directions:
-      - "forward"
-      - "backward"
-      - "forward"
-      - "backward"
+| Parameter | Description |
+| --- | --- |
+| `left_wheel_names` | Left wheel joints controlled by `diff_drive_controller`. |
+| `right_wheel_names` | Right wheel joints controlled by `diff_drive_controller`. |
+| `wheel_radius` | Wheel radius in meters. DDSM115 is about `0.0575` m radius. |
+| `wheel_separation` | Distance in meters between left and right wheel contact lines. Measure your robot. |
+| `wheels_per_side` | `2` for a four-wheel skid/differential base. |
+| `odom_frame_id` | Usually `odom`. |
+| `base_frame_id` | Usually `base_link` or `base_footprint`. |
+| `cmd_vel_timeout` | Stops the controller if command velocity stops arriving. |
+
+## Configure twist_mux
+
+Edit:
+
+```text
+config/twist_mux.yaml
 ```
 
-Parameters:
+Default inputs:
 
-| Name | Type | Description |
+| Source | Topic | Priority |
 | --- | --- | --- |
-| `port_name` | string | RS485 serial device, for example `/dev/ttyUSB0`. |
-| `wheel_names` | string array | Wheel names used to create ROS topics. Values must be unique. |
-| `wheel_ids` | integer array | DDSM115 IDs configured on the motors. Values must be unique and in `1..255`. |
-| `wheel_directions` | string array | Use `forward` or `backward`. `backward` reverses commands and velocity/angle feedback. |
+| Nav2 | `/cmd_vel_nav` | `10` |
+| Teleop | `/cmd_vel_teleop` | `100` |
 
-The three wheel arrays must have the same length.
+The launch file remaps `twist_mux` output to:
+
+```text
+/diff_drive_controller/cmd_vel_unstamped
+```
+
+That is the command topic used by `diff_drive_controller` when `use_stamped_vel: false`.
 
 ## Run
 
-Use the included launch file:
+Start the full stack:
 
 ```bash
-ros2 launch dsm115_motor_driver_ros2 dsm115_motor_driver.launch.py
+ros2 launch ddsm115_motor_driver_ros2 ddsm115_motor_driver.launch.py
 ```
 
-Use a custom config file:
+The launch starts:
+
+- `robot_state_publisher`
+- `controller_manager` / `ros2_control_node`
+- `joint_state_broadcaster`
+- `diff_drive_controller`
+- `twist_mux`
+
+## Test Commands
+
+Drive forward through the Nav2 mux input:
 
 ```bash
-ros2 launch dsm115_motor_driver_ros2 dsm115_motor_driver.launch.py \
-  config_file:=/path/to/my_dsm115_config.yaml
+ros2 topic pub /cmd_vel_nav geometry_msgs/msg/Twist \
+  "{linear: {x: 0.1}, angular: {z: 0.0}}" -r 10
 ```
 
-Or run the node directly:
+Turn in place:
 
 ```bash
-ros2 run dsm115_motor_driver_ros2 dsm115_motor_driver_node \
-  --ros-args --params-file config/dsm115_motor_driver.yaml
+ros2 topic pub /cmd_vel_nav geometry_msgs/msg/Twist \
+  "{linear: {x: 0.0}, angular: {z: 0.5}}" -r 10
 ```
 
-## Topics
-
-For each configured wheel name, the node creates these topics:
-
-| Topic | Type | Direction | Description |
-| --- | --- | --- | --- |
-| `/<wheel_name>/target_velocity` | `std_msgs/msg/Float64` | Subscribe | Target wheel angular velocity in `rad/s`. |
-| `/<wheel_name>/current_velocity` | `std_msgs/msg/Float64` | Publish | Measured wheel angular velocity in `rad/s`. |
-| `/<wheel_name>/angle` | `std_msgs/msg/Float64` | Publish | Wheel angle in `rad`. |
-| `/<wheel_name>/current` | `std_msgs/msg/Float64` | Publish | Motor current feedback. |
-
-Example command:
+Stop:
 
 ```bash
-ros2 topic pub /front_left_wheel/target_velocity std_msgs/msg/Float64 "{data: 3.0}" -r 10
+ros2 topic pub /cmd_vel_nav geometry_msgs/msg/Twist \
+  "{linear: {x: 0.0}, angular: {z: 0.0}}" --once
 ```
 
-Stop a wheel:
+Check controllers:
 
 ```bash
-ros2 topic pub /front_left_wheel/target_velocity std_msgs/msg/Float64 "{data: 0.0}" --once
+ros2 control list_controllers
+ros2 control list_hardware_interfaces
 ```
+
+Check odometry:
+
+```bash
+ros2 topic echo /diff_drive_controller/odom
+```
+
+## Nav2 Connection
+
+Configure Nav2 to publish velocity commands to:
+
+```text
+/cmd_vel_nav
+```
+
+Or remap Nav2 controller output:
+
+```text
+/cmd_vel -> /cmd_vel_nav
+```
+
+Teleop can publish to:
+
+```text
+/cmd_vel_teleop
+```
+
+Because teleop has higher priority in `twist_mux.yaml`, it overrides Nav2 while active.
 
 ## Notes
 
-- This driver only implements velocity control mode.
-- DDSM115 wheels keep the last command if control messages stop. The node sends `0 RPM` to all configured wheels during normal shutdown, but it cannot protect against hardware, bus, or power failures.
-- Occasional RS485 timeouts can happen. The node ignores a bad feedback packet and waits for the next command.
-
-# Safety Needed
+- The DDSM115 hardware interface exports standard `velocity` command interfaces and `position`/`velocity` state interfaces.
+- The hardware interface sends `0 RPM` to all motors when deactivated or cleaned up.
+- Odometry comes from `diff_drive_controller` using wheel velocity state. Tune `wheel_radius` and `wheel_separation` carefully for accurate odom.
+- If the robot moves backward, swap `forward`/`backward` in the URDF joint params.
+- If the robot rotates when commanded forward, check left/right wheel joint grouping in `ros2_control.yaml`.

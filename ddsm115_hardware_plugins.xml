@@ -1,0 +1,10 @@
+<library path="ddsm115_hardware_interface">
+  <class
+    name="ddsm115_motor_driver_ros2/Ddsm115HardwareInterface"
+    type="ddsm115_motor_driver_ros2::Ddsm115HardwareInterface"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control hardware interface for Waveshare DDSM115 wheels over RS485.
+    </description>
+  </class>
+</library>
