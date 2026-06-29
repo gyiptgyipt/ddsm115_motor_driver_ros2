@@ -24,9 +24,9 @@ def generate_launch_description():
                 description="Path to the DDSM115 driver YAML parameter file.",
             ),
             Node(
-                package="dsm115_motor_driver_ros2",
-                executable="dsm115_motor_driver_node",
-                name="dsm115_motor_driver",
+                package="ddsm115_motor_driver_ros2",
+                executable="ddsm115_motor_driver_node",
+                name="ddsm115_motor_driver",
                 output="screen",
                 parameters=[config_file],
             ),

@@ -36,7 +36,7 @@ class Dsm115MotorDriverNode : public rclcpp::Node
 {
 public:
   Dsm115MotorDriverNode()
-  : Node("dsm115_motor_driver")
+  : Node("ddsm115_motor_driver")
   {
     const auto port_name = declare_parameter<std::string>("port_name", kDefaultSerialPort);
     wheel_names_ =
@@ -200,7 +200,7 @@ int main(int argc, char ** argv)
     rclcpp::spin(node);
     node.reset();
   } catch (const std::exception & error) {
-    RCLCPP_FATAL(rclcpp::get_logger("dsm115_motor_driver"), "%s", error.what());
+    RCLCPP_FATAL(rclcpp::get_logger("ddsm115_motor_driver"), "%s", error.what());
     rclcpp::shutdown();
     return 1;
   }

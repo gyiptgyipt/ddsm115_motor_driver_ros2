@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(dsm115_motor_driver_ros2)
+project(ddsm115_motor_driver_ros2)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -9,22 +9,22 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_executable(dsm115_motor_driver_node
-  src/dsm115_motor_driver_node.cpp
+add_executable(ddsm115_motor_driver_node
+  src/ddsm115_motor_driver_node.cpp
   src/ddsm115_communicator.cpp
 )
 
-target_compile_features(dsm115_motor_driver_node PUBLIC cxx_std_17)
-target_include_directories(dsm115_motor_driver_node PUBLIC
+target_compile_features(ddsm115_motor_driver_node PUBLIC cxx_std_17)
+target_include_directories(ddsm115_motor_driver_node PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include>"
 )
-ament_target_dependencies(dsm115_motor_driver_node
+ament_target_dependencies(ddsm115_motor_driver_node
   rclcpp
   std_msgs
 )
 
-install(TARGETS dsm115_motor_driver_node
+install(TARGETS ddsm115_motor_driver_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
