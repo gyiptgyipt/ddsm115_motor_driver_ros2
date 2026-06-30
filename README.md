@@ -21,6 +21,28 @@ ros2_control hardware interface
 DDSM115 motors
 ```
 
+## Install Required ROS 2 Humble Packages
+
+Run the following commands to update your packages and install the required dependencies:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  ros-humble-ament-cmake \
+  ros-humble-hardware-interface \
+  ros-humble-pluginlib \
+  ros-humble-rclcpp \
+  ros-humble-rclcpp-lifecycle \ 
+  ros-humble-controller-manager \
+  ros-humble-ros2-control \
+  ros-humble-ros2-controllers \
+  ros-humble-twist-mux \
+  ros-humble-teleop-twist-keyboard \
+  ros-humble-rqt-publisher \
+  ros-humble-joint-state-broadcaster \
+  ros-humble-robot-state-publisher \
+  ros-humble-teleop-twist-joy
+```
 ## Motor ID Setup
 
 Assign a unique ID to each motor before running the driver. Connect only one motor to the RS485 adapter while assigning an ID. If multiple unconfigured motors are connected, they can all receive the same ID.
