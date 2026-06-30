@@ -1,6 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler
-from launch.event_handlers import OnProcessExit
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -56,17 +55,16 @@ def generate_launch_description():
         parameters=[robot_description, controllers_file],
     )
 
-    joint_state_broadcaster_spawner = Node(
+    controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
-        output="screen",
-    )
-
-    diff_drive_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["diff_drive_controller", "--controller-manager", "/controller_manager"],
+        arguments=[
+            "joint_state_broadcaster",
+            "diff_drive_controller",
+            "--controller-manager",
+            "/controller_manager",
+            "--activate-as-group",
+        ],
         output="screen",
     )
 
@@ -77,13 +75,6 @@ def generate_launch_description():
         output="screen",
         parameters=[twist_mux_file],
         remappings=[("cmd_vel_out", "/diff_drive_controller/cmd_vel_unstamped")],
-    )
-
-    delay_diff_drive_after_joint_state = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=joint_state_broadcaster_spawner,
-            on_exit=[diff_drive_controller_spawner],
-        )
     )
 
     return LaunchDescription(
@@ -105,8 +96,7 @@ def generate_launch_description():
             ),
             robot_state_publisher,
             ros2_control_node,
-            joint_state_broadcaster_spawner,
-            delay_diff_drive_after_joint_state,
+            controller_spawner,
             twist_mux,
         ]
     )

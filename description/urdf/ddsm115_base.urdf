@@ -37,7 +37,7 @@
   <ros2_control name="Ddsm115System" type="system">
     <hardware>
       <plugin>ddsm115_motor_driver_ros2/Ddsm115HardwareInterface</plugin>
-      <param name="port_name">/dev/ttyUSB0</param>
+      <param name="port_name">/dev/ttyACM0</param>
       <param name="command_deadband">0.001</param>
       <param name="command_change_epsilon">0.001</param>
     </hardware>

@@ -221,6 +221,22 @@ Check odometry:
 ros2 topic echo /diff_drive_controller/odom
 ```
 
+## Troubleshooting
+
+If `joint_state_broadcaster` prints this, it is normal:
+
+```text
+'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+```
+
+If the spawner says a controller is already loaded or cannot be configured from `active` state, an old launch is probably still running. Stop the old launch, then check:
+
+```bash
+ros2 control list_controllers
+```
+
+If controllers are still listed, stop the leftover ROS processes or restart the terminal/session before launching again. The launch file spawns `joint_state_broadcaster` and `diff_drive_controller` together, so a clean launch should not try to configure an already-active controller.
+
 ## Nav2 Connection
 
 Configure Nav2 to publish velocity commands to:
